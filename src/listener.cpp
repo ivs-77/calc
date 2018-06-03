@@ -17,7 +17,10 @@ void listener::execute()
 	while(true)
 	{		
 		int socket_conn = accept(_list_socket, NULL, NULL);
-		cmd_handler::start(socket_conn);
+		if(socket_conn >= 0)
+			cmd_handler::start(socket_conn);
+		else
+			log::log_errno("Socket accept error");
 	}
 }
 
@@ -29,7 +32,7 @@ void* listener::listener_proc(void* data)
 	return NULL;
 }
 
-int listener::start(int port, int back_log)
+int listener::start(int port)
 {
 	int list_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (list_socket == -1)
@@ -49,7 +52,7 @@ int listener::start(int port, int back_log)
 		return -1;
 	}    
 	
-	if (listen(list_socket, back_log) == -1) 
+	if (listen(list_socket, SOMAXCONN) == -1) 
 	{        
 		log::log_errno("Socket listen error");
 		return -1;

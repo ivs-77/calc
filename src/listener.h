@@ -1,3 +1,4 @@
+
 class listener
 {
 private:
@@ -9,6 +10,6 @@ private:
 
 public:
 
-	static int start(int port, int back_log);
+	static int start(int port);
 
 };
