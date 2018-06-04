@@ -63,6 +63,7 @@ int listener::start(int port)
 	int rc = pthread_create(&handler_thread, NULL, listener::listener_proc, (void*)listener_inst);
 	if(rc != 0)
 	{
+		delete listener_inst;
 		log::log_error("Listener thread creation error: %d", rc);
 		return -1;
 	}

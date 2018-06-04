@@ -5,10 +5,16 @@
 #include "log.h"
 
 int config::_port = -1;
+int config::_loginTimeout = 5;
 
 int config::get_port()
 {
 	return _port;
+}
+
+int config::get_login_timeout()
+{
+	return _loginTimeout;
 }
 
 int config::read()
@@ -22,12 +28,18 @@ int config::read()
 	
 	char buf[100];
 	const char* portSetting = "port=";
+	const char* loginTimeoutSetting = "login_timeout=";
 	while(fgets(buf, 100, config_file) != NULL)
 	{
-		if(strncmp(buf, portSetting, strlen(portSetting)) == 0 && 
-		   strlen(buf) > strlen(portSetting))
+		if(strncmp(buf, portSetting, strlen(portSetting)) == 0)
 		{
-			_port = atoi(buf+strlen(portSetting));
+			if(strlen(buf) > strlen(portSetting))
+				_port = atoi(buf+strlen(portSetting));
+		}
+		else if(strncmp(buf, loginTimeoutSetting, strlen(loginTimeoutSetting)) == 0)
+		{
+			if(strlen(buf) > strlen(loginTimeoutSetting))	
+				_loginTimeout = atoi(buf+strlen(loginTimeoutSetting));
 		}
 	}
 	
@@ -37,6 +49,12 @@ int config::read()
 		return -1;
 	}
 	
+	if(_loginTimeout <= 0)
+	{
+		log::log_error("Invalid login timeout: %d (must be greater than 0)", _loginTimeout);
+		return -1;
+	}
+
 	fclose(config_file);
 	return 0;
 	
