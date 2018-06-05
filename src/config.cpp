@@ -6,6 +6,7 @@
 
 int config::_port = -1;
 int config::_loginTimeout = 5;
+int config::_max_cmd_length = 1024;
 
 int config::get_port()
 {
@@ -15,6 +16,11 @@ int config::get_port()
 int config::get_login_timeout()
 {
 	return _loginTimeout;
+}
+
+int config::get_max_cmd_length()
+{
+	return _max_cmd_length;
 }
 
 int config::read()
@@ -29,6 +35,7 @@ int config::read()
 	char buf[100];
 	const char* portSetting = "port=";
 	const char* loginTimeoutSetting = "login_timeout=";
+	const char* maxCmdLengthSetting = "max_cmd_length=";
 	while(fgets(buf, 100, config_file) != NULL)
 	{
 		if(strncmp(buf, portSetting, strlen(portSetting)) == 0)
@@ -41,6 +48,11 @@ int config::read()
 			if(strlen(buf) > strlen(loginTimeoutSetting))	
 				_loginTimeout = atoi(buf+strlen(loginTimeoutSetting));
 		}
+		else if(strncmp(buf, maxCmdLengthSetting, strlen(maxCmdLengthSetting)) == 0)
+		{
+			if(strlen(buf) > strlen(maxCmdLengthSetting))	
+				_max_cmd_length = atoi(buf+strlen(maxCmdLengthSetting));
+		}
 	}
 	
 	if(_port < 1024 || _port > 49151)
@@ -49,9 +61,15 @@ int config::read()
 		return -1;
 	}
 	
-	if(_loginTimeout <= 0)
+	if(_loginTimeout < 1)
 	{
-		log::log_error("Invalid login timeout: %d (must be greater than 0)", _loginTimeout);
+		log::log_error("Invalid login timeout: %d (muset be at least 1)", _loginTimeout);
+		return -1;
+	}
+
+	if(_max_cmd_length < 1024)
+	{
+		log::log_error("Invalid max command length: %d (must be at least 1024)", _max_cmd_length);
 		return -1;
 	}
 

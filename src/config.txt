@@ -1,2 +1,3 @@
 port=1500
 login_timeout=5
+max_cmd_length=1024
