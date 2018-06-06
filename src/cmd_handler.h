@@ -1,3 +1,4 @@
+#include <string>
 
 enum handler_state
 {
@@ -15,9 +16,11 @@ private:
 	void execute();
 	static void* handler_proc(void* data);
 	int _connfd;
-	char* _command_buf;
+	std::string current_command;
 	
-	void hello();
+	int print(const char* message);
+	int hello();
+	int invalid_cmd();
 	int wait();
 	int read_command();
 	handler_state login();
