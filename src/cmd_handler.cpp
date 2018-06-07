@@ -129,7 +129,7 @@ handler_state cmd_handler::login()
 		return exit;	
 
 	const char* login_cmd = "login ";
-	size_t login_length = strlen(login_cmd);
+	const size_t login_length = strlen(login_cmd);
 	if(current_command.compare(0, login_length, login_cmd) != 0 || 
 	   current_command.length() <= login_length)
 	{
@@ -144,7 +144,7 @@ handler_state cmd_handler::login()
 		return exit;	
 	
 	const char* pwd_cmd = "password ";
-	size_t pwd_length = strlen(pwd_cmd);
+	const size_t pwd_length = strlen(pwd_cmd);
 	if(current_command.compare(0, pwd_length, pwd_cmd) != 0 || 
 	   current_command.length() <= pwd_length)
 	{

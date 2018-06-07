@@ -6,7 +6,7 @@
 
 int config::_port = -1;
 int config::_loginTimeout = 5;
-int config::_max_cmd_length = 1024;
+std::string config::_connect;
 
 int config::get_port()
 {
@@ -18,9 +18,9 @@ int config::get_login_timeout()
 	return _loginTimeout;
 }
 
-int config::get_max_cmd_length()
+const char* config::get_connect()
 {
-	return _max_cmd_length;
+	return _connect.c_str();
 }
 
 int config::read()
@@ -32,11 +32,11 @@ int config::read()
 		return -1;
 	}
 	
-	char buf[100];
+	char buf[255];
 	const char* portSetting = "port=";
 	const char* loginTimeoutSetting = "login_timeout=";
-	const char* maxCmdLengthSetting = "max_cmd_length=";
-	while(fgets(buf, 100, config_file) != NULL)
+	const char* connectSetting = "connect=";
+	while(fgets(buf, 255, config_file) != NULL)
 	{
 		if(strncmp(buf, portSetting, strlen(portSetting)) == 0)
 		{
@@ -48,10 +48,10 @@ int config::read()
 			if(strlen(buf) > strlen(loginTimeoutSetting))	
 				_loginTimeout = atoi(buf+strlen(loginTimeoutSetting));
 		}
-		else if(strncmp(buf, maxCmdLengthSetting, strlen(maxCmdLengthSetting)) == 0)
+		else if(strncmp(buf, connectSetting, strlen(connectSetting)) == 0)
 		{
-			if(strlen(buf) > strlen(maxCmdLengthSetting))	
-				_max_cmd_length = atoi(buf+strlen(maxCmdLengthSetting));
+			if(strlen(buf) > strlen(connectSetting))	
+				_connect = buf+strlen(connectSetting);
 		}
 	}
 	
@@ -67,9 +67,9 @@ int config::read()
 		return -1;
 	}
 
-	if(_max_cmd_length < 1024)
+	if(_connect.empty())
 	{
-		log::log_error("Invalid max command length: %d (must be at least 1024)", _max_cmd_length);
+		log::log_error("Connect is empty");
 		return -1;
 	}
 
