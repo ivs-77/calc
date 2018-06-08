@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	if (listener::start(config::get_port()) == -1)
+	if (listener::start() == -1)
 	{         
 		log::log_console("Error starting calc listener. See error log for details.");
 		return -1;

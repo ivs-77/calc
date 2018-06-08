@@ -3,6 +3,7 @@
 #include <netinet/in.h>    
 #include <arpa/inet.h> 
 #include <pthread.h>
+#include "config.h"
 #include "log.h"
 #include "cmd_handler.h"
 #include "listener.h"
@@ -32,7 +33,7 @@ void* listener::listener_proc(void* data)
 	return NULL;
 }
 
-int listener::start(int port)
+int listener::start()
 {
 	int list_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (list_socket == -1)
@@ -44,7 +45,7 @@ int listener::start(int port)
 	struct sockaddr_in addr;
 	addr.sin_addr.s_addr = INADDR_ANY;
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
+	addr.sin_port = htons(config::get_port());
 	
 	if (bind(list_socket, (struct sockaddr*)&addr, sizeof(addr)) == -1) 
 	{        

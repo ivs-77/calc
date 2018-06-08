@@ -10,6 +10,6 @@ private:
 
 public:
 
-	static int start(int port);
+	static int start();
 
 };

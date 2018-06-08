@@ -11,6 +11,7 @@
 cmd_handler::cmd_handler(int connfd)
 {
 	_connfd = connfd;
+	_account = NULL;
 }
 
 cmd_handler::~cmd_handler()
@@ -99,6 +100,11 @@ int cmd_handler::read_command()
 		}
 		current_command += read_buffer;
 	}
+	
+	// for netcap -C mode: it ends line with \r\n
+	if(current_command.length() > 0 && current_command[current_command.length() - 1] == '\r')
+		current_command.resize(current_command.length() - 1);
+
 	return 0;
 }
 
@@ -114,7 +120,15 @@ int cmd_handler::print(const char* message)
 
 int cmd_handler::hello()
 {
-	return print("calc>");
+	if(_account == NULL)
+	{
+		return print("calc>");
+	}
+	else
+	{
+		int res = print(_account->get_name());
+		return res != 0 ? res : print("@calc>");
+	}
 }
 
 int cmd_handler::invalid_cmd()
@@ -154,17 +168,22 @@ handler_state cmd_handler::login()
 	}
 	
 	std::string pwd = current_command.substr(pwd_length);
-	
-	log::log_console("Login: %s", login_name.c_str());
-	log::log_console("Password: %s", pwd.c_str());
 
-	return exit;
+	_account = account::get_account(login_name, pwd);
+	if(_account == NULL)
+	{
+		print("Access denied\n");
+		return initial;
+	}
+
+	return handling;
 }
 
 handler_state cmd_handler::handle_command()
 {
-	log::log_console("Handling commands");
+	hello();
 	sleep(1);
+	print("\n");
 	return handling;
 }
 

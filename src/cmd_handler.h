@@ -1,4 +1,5 @@
 #include <string>
+#include "account.h"
 
 enum handler_state
 {
@@ -25,6 +26,8 @@ private:
 	int read_command();
 	handler_state login();
 	handler_state handle_command();
+	
+	account* _account;
 
 public:
 	
