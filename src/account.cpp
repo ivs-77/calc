@@ -94,3 +94,17 @@ account* account::get_account(const std::string& login, const std::string& pwd)
 {
 	return _accounts.get_account(login, pwd);
 }
+
+int account::reserve()
+{
+	return -1;
+}
+
+void account::free(int reserv_num)
+{
+}
+
+int account::commit(int reserv_num, std::string& calc_expression, double result)
+{
+	return -1;
+}

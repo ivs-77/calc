@@ -21,9 +21,9 @@ private:
 	
 	int print(const char* message);
 	int hello();
-	int invalid_cmd();
 	int wait();
 	int read_command();
+	handler_state calc(std::string calc_expression);
 	handler_state login();
 	handler_state handle_command();
 	

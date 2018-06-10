@@ -4,9 +4,11 @@
 #include <poll.h>
 #include <stdio.h>
 #include <string.h>
+#include <sstream>
 #include "log.h"
 #include "cmd_handler.h"
 #include "config.h"
+#include "calc_node.h"
 
 cmd_handler::cmd_handler(int connfd)
 {
@@ -131,11 +133,6 @@ int cmd_handler::hello()
 	}
 }
 
-int cmd_handler::invalid_cmd()
-{
-	return print("Invalid command\n");
-}
-
 handler_state cmd_handler::login()
 {
 	
@@ -147,7 +144,7 @@ handler_state cmd_handler::login()
 	if(current_command.compare(0, login_length, login_cmd) != 0 || 
 	   current_command.length() <= login_length)
 	{
-		if(invalid_cmd() == -1)
+		if(print("Invalid command\n") == -1)
 			return exit;
 		return initial;
 	}
@@ -162,7 +159,7 @@ handler_state cmd_handler::login()
 	if(current_command.compare(0, pwd_length, pwd_cmd) != 0 || 
 	   current_command.length() <= pwd_length)
 	{
-		if(invalid_cmd() == -1)
+		if(print("Invalid command\n") == -1)
 			return exit;
 		return initial;
 	}
@@ -181,9 +178,70 @@ handler_state cmd_handler::login()
 
 handler_state cmd_handler::handle_command()
 {
-	hello();
-	sleep(1);
-	print("\n");
+	
+	if(hello() == -1 || wait() == -1 || read_command() == -1)
+		return exit;	
+		
+	if(current_command == "logout")
+	{
+		_account = NULL;
+		return initial;
+	}
+		
+	const char* calc_cmd = "calc ";
+	const size_t calc_length = strlen(calc_cmd);
+	if(current_command.compare(0, calc_length, calc_cmd) != 0 || 
+	   current_command.length() <= calc_length)
+	{
+		if(print("Invalid command\n") == -1)
+			return exit;
+		return handling;
+	}
+	
+	return calc(current_command.substr(calc_length));
+}
+
+handler_state cmd_handler::calc(std::string calc_expression)
+{
+	int reserve_num = _account->reserve();
+	if(reserve_num == -1)
+	{
+		if(print("Your account has insufficient funds\n") == -1)
+			return exit;	
+		return handling;
+	}
+
+	calc_node node;
+	if(node.parse(calc_expression) == -1)
+	{
+		_account->free(reserve_num);
+		if(print("Invalid expression\n") == -1)
+			return exit;	
+		return handling;
+	}
+
+	double result;	
+	if(node.calc(result) == -1)
+	{
+		_account->free(reserve_num);
+		if(print("Error calculating expression\n") == -1)
+			return exit;	
+		return handling;
+	
+	}
+	
+	if(_account->commit(reserve_num, calc_expression, result) == -1)
+	{
+		_account->free(reserve_num);
+		print("Error in account system\n");
+		return exit;
+	}
+
+	std::ostringstream result_stream;
+	result_stream << result;
+	if(print(result_stream.str().c_str()) == -1)
+		return exit;
+
 	return handling;
 }
 

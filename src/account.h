@@ -24,6 +24,9 @@ public:
 	static int load_accounts();
 	static account* get_account(const std::string& login, const std::string& pwd);
 	bool pwd_equals(const std::string& pwd);
+	int reserve();
+	void free(int reserv_num);
+	int commit(int reserv_num, std::string& calc_expression, double result);
 	const char* get_name();
 	account(int id, const char* name, const char* pwd, int amount);
 	~account();
