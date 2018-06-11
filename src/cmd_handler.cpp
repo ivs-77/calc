@@ -211,8 +211,8 @@ handler_state cmd_handler::calc(std::string calc_expression)
 		return handling;
 	}
 
-	calc_node node;
-	if(node.parse(calc_expression) == -1)
+	calc_node* node = calc_node::parse(calc_expression.c_str());
+	if(node == NULL)
 	{
 		_account->free(reserve_num);
 		if(print("Invalid expression\n") == -1)
@@ -221,9 +221,10 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	}
 
 	double result;	
-	if(node.calc(result) == -1)
+	if(node->calc(result) == -1)
 	{
 		_account->free(reserve_num);
+		delete node;
 		if(print("Error calculating expression\n") == -1)
 			return exit;	
 		return handling;
@@ -233,6 +234,7 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	if(_account->commit(reserve_num, calc_expression, result) == -1)
 	{
 		_account->free(reserve_num);
+		delete node;
 		print("Error in account system\n");
 		return exit;
 	}
@@ -240,8 +242,12 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	std::ostringstream result_stream;
 	result_stream << result;
 	if(print(result_stream.str().c_str()) == -1)
+	{
+		delete node;
 		return exit;
+	}
 
+	delete node;
 	return handling;
 }
 
