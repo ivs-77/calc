@@ -22,4 +22,5 @@ private:
 	int _priority;
 	calc_node* _left_operand;
 	calc_node* _right_operand;
+
 };

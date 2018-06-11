@@ -26,7 +26,7 @@ public:
 	bool pwd_equals(const std::string& pwd);
 	int reserve();
 	void free(int reserv_num);
-	int commit(int reserv_num, std::string& calc_expression, double result);
+	int commit(int reserv_num, std::string& calc_expression, std::string result);
 	const char* get_name();
 	account(int id, const char* name, const char* pwd, int amount);
 	~account();

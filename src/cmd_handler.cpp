@@ -103,7 +103,7 @@ int cmd_handler::read_command()
 		current_command += read_buffer;
 	}
 	
-	// for netcap -C mode: it ends line with \r\n
+	// for netcat -C mode: it ends line with \r\n
 	if(current_command.length() > 0 && current_command[current_command.length() - 1] == '\r')
 		current_command.resize(current_command.length() - 1);
 
@@ -179,7 +179,7 @@ handler_state cmd_handler::login()
 handler_state cmd_handler::handle_command()
 {
 	
-	if(hello() == -1 || wait() == -1 || read_command() == -1)
+	if(hello() == -1 || read_command() == -1)
 		return exit;	
 		
 	if(current_command == "logout")
@@ -203,6 +203,7 @@ handler_state cmd_handler::handle_command()
 
 handler_state cmd_handler::calc(std::string calc_expression)
 {
+	
 	int reserve_num = _account->reserve();
 	if(reserve_num == -1)
 	{
@@ -231,7 +232,9 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	
 	}
 	
-	if(_account->commit(reserve_num, calc_expression, result) == -1)
+	std::ostringstream result_stream;
+	result_stream << result;
+	if(_account->commit(reserve_num, calc_expression, result_stream.str()) == -1)
 	{
 		_account->free(reserve_num);
 		delete node;
@@ -239,8 +242,7 @@ handler_state cmd_handler::calc(std::string calc_expression)
 		return exit;
 	}
 
-	std::ostringstream result_stream;
-	result_stream << result;
+	result_stream << '\n';
 	if(print(result_stream.str().c_str()) == -1)
 	{
 		delete node;
