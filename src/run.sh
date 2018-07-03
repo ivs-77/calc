@@ -2,3 +2,4 @@
 
 cd ../bin
 ./calc
+ps ax|grep calc

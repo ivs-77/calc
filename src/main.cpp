@@ -1,4 +1,6 @@
 #include <stdio.h>    
+#include <sys/types.h>    
+#include <unistd.h>    
 #include "config.h"
 #include "log.h"
 #include "listener.h"
@@ -6,25 +8,43 @@
 
 int main(int argc, char *argv[])    
 {    
-	if (config::read() == -1)
-	{         
-		log::log_console("Error reading calc config. See error log for details.");
-		return -1;
-	}
 
-	if (account::load_accounts() == -1)
-	{         
-		log::log_console("Error loading accounts. See error log for details.");
-		return -1;
-	}
-
-	if (listener::start() == -1)
-	{         
-		log::log_console("Error starting calc listener. See error log for details.");
+	pid_t pid = fork();
+	
+	if(pid < 0)
+	{
+		log::log_error("Error creating child process");
 		return -1;
 	}
 	
-	log::log_console("Calc listener started. Press Enter to stop.");
-	char c[2];
-	fgets(c, 2, stdin);
+	if (pid == 0)
+	{
+
+		if (config::read() == -1)
+		{         
+			log::log_error("Error reading calc config");
+			return -1;
+		}
+
+		if (account::load_accounts() == -1)
+		{         
+			log::log_error("Error loading accounts");
+			return -1;
+		}
+
+		if (listener::start() == -1)
+		{         
+			log::log_error("Error starting calc listener");
+			return -1;
+		}
+		
+		// This point is never reached.
+		// Process is exited by cmd_handler when it accepts stop_key command
+		return 0;
+	}
+	else
+	{
+		log::log_info("Calc started");
+		return 0;
+	}
 }

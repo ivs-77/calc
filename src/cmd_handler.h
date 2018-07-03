@@ -5,7 +5,7 @@ enum handler_state
 {
 	initial,
 	handling,
-	exit
+	exit_state
 };
 
 class cmd_handler

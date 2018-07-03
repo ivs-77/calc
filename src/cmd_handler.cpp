@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sstream>
+#include <stdlib.h>
 #include "log.h"
 #include "cmd_handler.h"
 #include "config.h"
@@ -25,7 +26,7 @@ void cmd_handler::execute()
 
 	handler_state state = initial;
 	
-	while(state != exit)
+	while(state != exit_state)
 	{
 		switch(state)
 		{
@@ -35,7 +36,7 @@ void cmd_handler::execute()
 			case handling:
 				state = handle_command();
 				break;	
-			case exit:
+			case exit_state:
 				break;
 		}
 	}
@@ -50,7 +51,11 @@ int cmd_handler::wait()
 	fd.events = POLLIN;
 	fd.revents = 0;
 	
+	log::log_info("Before poll");
+	
 	int retval = poll(&fd, 1, 1000 * config::get_login_timeout());
+
+	log::log_info("After poll");
 
 	if (retval == -1)
 	{
@@ -137,7 +142,13 @@ handler_state cmd_handler::login()
 {
 	
 	if(hello() == -1 || wait() == -1 || read_command() == -1)
-		return exit;	
+		return exit_state;	
+		
+	if(current_command == config::get_stop_key())
+	{
+		log::log_info("Stop_key command accepted. Calc is terminating.");
+		exit(0);
+	}
 
 	const char* login_cmd = "login ";
 	const size_t login_length = strlen(login_cmd);
@@ -145,14 +156,14 @@ handler_state cmd_handler::login()
 	   current_command.length() <= login_length)
 	{
 		if(print("Invalid command\n") == -1)
-			return exit;
+			return exit_state;
 		return initial;
 	}
 	
 	std::string login_name = current_command.substr(login_length);
 	
 	if(hello() == -1 || wait() == -1 || read_command() == -1)
-		return exit;	
+		return exit_state;	
 	
 	const char* pwd_cmd = "password ";
 	const size_t pwd_length = strlen(pwd_cmd);
@@ -160,7 +171,7 @@ handler_state cmd_handler::login()
 	   current_command.length() <= pwd_length)
 	{
 		if(print("Invalid command\n") == -1)
-			return exit;
+			return exit_state;
 		return initial;
 	}
 	
@@ -180,7 +191,7 @@ handler_state cmd_handler::handle_command()
 {
 	
 	if(hello() == -1 || read_command() == -1)
-		return exit;	
+		return exit_state;	
 		
 	if(current_command == "logout")
 	{
@@ -194,7 +205,7 @@ handler_state cmd_handler::handle_command()
 	   current_command.length() <= calc_length)
 	{
 		if(print("Invalid command\n") == -1)
-			return exit;
+			return exit_state;
 		return handling;
 	}
 	
@@ -208,7 +219,7 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	if(reserve_num == -1)
 	{
 		if(print("Your account has insufficient funds\n") == -1)
-			return exit;	
+			return exit_state;	
 		return handling;
 	}
 
@@ -217,7 +228,7 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	{
 		_account->free(reserve_num);
 		if(print("Invalid expression\n") == -1)
-			return exit;	
+			return exit_state;	
 		return handling;
 	}
 
@@ -227,7 +238,7 @@ handler_state cmd_handler::calc(std::string calc_expression)
 		_account->free(reserve_num);
 		delete node;
 		if(print("Error calculating expression\n") == -1)
-			return exit;	
+			return exit_state;	
 		return handling;
 	
 	}
@@ -239,14 +250,14 @@ handler_state cmd_handler::calc(std::string calc_expression)
 		_account->free(reserve_num);
 		delete node;
 		print("Error in account system\n");
-		return exit;
+		return exit_state;
 	}
 
 	result_stream << '\n';
 	if(print(result_stream.str().c_str()) == -1)
 	{
 		delete node;
-		return exit;
+		return exit_state;
 	}
 
 	delete node;
