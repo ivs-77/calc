@@ -1,6 +1,8 @@
 #include <stdio.h>    
 #include <sys/types.h>    
+#include <sys/stat.h>    
 #include <unistd.h>    
+#include <signal.h>    
 #include "config.h"
 #include "log.h"
 #include "listener.h"
@@ -13,38 +15,57 @@ int main(int argc, char *argv[])
 	
 	if(pid < 0)
 	{
-		log::log_error("Error creating child process");
+		log::log_errno("Error creating first child process");
 		return -1;
 	}
 	
-	if (pid == 0)
+	if(pid > 0)
+		return 0;
+	
+	if(setsid() < 0)
 	{
+		log::log_errno("Error creating session");
+		return -1;
+	}
+	
+	signal(SIGCHLD, SIG_IGN);
+	signal(SIGHUP, SIG_IGN);
 
-		if (config::read() == -1)
-		{         
-			log::log_error("Error reading calc config");
-			return -1;
-		}
+	pid = fork();
 
-		if (account::load_accounts() == -1)
-		{         
-			log::log_error("Error loading accounts");
-			return -1;
-		}
-
-		if (listener::start() == -1)
-		{         
-			log::log_error("Error starting calc listener");
-			return -1;
-		}
+	if(pid < 0)
+	{
+		log::log_errno("Error creating second child process");
+		return -1;
+	}
+	
+	if(pid > 0)
+		return 0;
 		
-		// This point is never reached.
-		// Process is exited by cmd_handler when it accepts stop_key command
-		return 0;
+	umask(0);
+	
+	for(int closingFile = sysconf(_SC_OPEN_MAX); closingFile >= 0; closingFile--)
+		close(closingFile);
+			
+	if (config::read() == -1)
+	{         
+		log::log_error("Error reading calc config");
+		return -1;
 	}
-	else
-	{
-		log::log_info("Calc started");
-		return 0;
+
+	if (account::load_accounts() == -1)
+	{         
+		log::log_error("Error loading accounts");
+		return -1;
 	}
+
+	if (listener::start() == -1)
+	{         
+		log::log_error("Error starting calc listener");
+		return -1;
+	}
+		
+	// This point is never reached.
+	// Process is exited by cmd_handler when it accepts stop_key command
+	return 0;
 }

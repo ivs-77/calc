@@ -50,13 +50,7 @@ int cmd_handler::wait()
 	fd.fd = _connfd;
 	fd.events = POLLIN;
 	fd.revents = 0;
-	
-	log::log_info("Before poll");
-	
 	int retval = poll(&fd, 1, 1000 * config::get_login_timeout());
-
-	log::log_info("After poll");
-
 	if (retval == -1)
 	{
 		log::log_errno("Error while waiting for user input");
