@@ -87,7 +87,7 @@ int cmd_handler::read_command()
 			}
 			else if(retval == 0)
 			{
-				log::log_error("EOF reading user input");
+				// client closed connection
 				return -1;
 			}
 			else
