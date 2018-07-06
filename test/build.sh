@@ -1,3 +1,7 @@
 #!/bin/sh
 
-g++ main.cpp -o calc_test
+cd ../test_build
+cmake ../test
+make clean
+make
+make install

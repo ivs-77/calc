@@ -1,0 +1,6 @@
+host=localhost
+port=1500
+user=john/johnpwd
+user=jack/jackpwd
+sessions_per_user=10
+tests_per_session=100
