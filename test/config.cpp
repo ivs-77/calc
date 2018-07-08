@@ -99,7 +99,7 @@ int config::read()
 		else if(strncmp(buf, host_setting, strlen(host_setting)) == 0)
 		{
 			if(strlen(buf) > strlen(host_setting))	
-				_host = buf+strlen(host_setting);
+				_host = std::string(buf+strlen(host_setting), strlen(buf)-strlen(host_setting)-1);
 		}
 		else if(strncmp(buf, user_setting, strlen(user_setting)) == 0)
 		{
@@ -114,7 +114,7 @@ int config::read()
 				
 				_calc_users.push_back(calc_user(
 					std::string(buf+strlen(user_setting), separator_char-buf-strlen(user_setting)).c_str(),
-					std::string(separator_char+1).c_str()));
+					std::string(separator_char+1, strlen(separator_char+1)-1).c_str()));
 
 			}
 		}
