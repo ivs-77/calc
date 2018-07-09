@@ -2,6 +2,7 @@
 #include <stdlib.h>    
 #include <string.h>    
 #include "config.h"
+#include "log.h"
 
 calc_user::calc_user(const char* name, const char* password)
 {
@@ -69,7 +70,7 @@ int config::read()
 	FILE* config_file = fopen("config.txt", "rt");
 	if(config_file == NULL)
 	{
-		printf("Cannot open config file\n");
+		log::log_console("Cannot open config file");
 		return -1;
 	}
 	
@@ -124,31 +125,31 @@ int config::read()
 
 	if(_port < 1024 || _port > 49151)
 	{
-		printf("Invalid port: %d (allowable values: 1024-49151)\n", _port);
+		log::log_console("Invalid port: %d (allowable values: 1024-49151)", _port);
 		return -1;
 	}
 	
 	if(_sessions_per_user < 1)
 	{
-		printf("Invalid sessions per user: %d (muset be at least 1)\n", _sessions_per_user);
+		log::log_console("Invalid sessions per user: %d (muset be at least 1)", _sessions_per_user);
 		return -1;
 	}
 	
 	if(_tests_per_session < 1)
 	{
-		printf("Invalid tests per session: %d (muset be at least 1)\n", _tests_per_session);
+		log::log_console("Invalid tests per session: %d (muset be at least 1)", _tests_per_session);
 		return -1;
 	}
 
 	if(_host.empty())
 	{
-		printf("Host is empty\n");
+		log::log_console("Host is empty");
 		return -1;
 	}
 	
 	if(_calc_users.size() == 0)
 	{
-		printf("No users defined\n");
+		log::log_console("No users defined");
 		return -1;
 	}
 

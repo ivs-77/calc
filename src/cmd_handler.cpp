@@ -73,6 +73,7 @@ int cmd_handler::read_command()
 	current_command.clear();
 	
 	char read_buffer[1025];
+	read_buffer[1024] = 0;
 	char* line_char	= NULL;
 	while(line_char == NULL)
 	{

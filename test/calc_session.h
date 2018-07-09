@@ -11,7 +11,14 @@ private:
 	std::string _user;
 	std::string _password;
 	int _session_index;
-
+	
+	int login(int sockfd);
+	int make_test(int sockfd, int test_index);
+	int read_line(int sockfd, std::string& line_str);
+	int write_str(int sockfd, const char* str);
+	int read_str(int sockfd, const char* str);
+	int read_num(int sockfd, double& num);
+	
 public:
 	
 	static int start(int session_index, const char* user, const char* password, pthread_t* session_thread);
