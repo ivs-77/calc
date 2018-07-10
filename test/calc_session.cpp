@@ -10,6 +10,7 @@
 #include "calc_session.h"
 #include "config.h"
 #include "log.h"
+#include "calc_node.h"
 
 calc_session::calc_session(int session_index, const char* user, const char* password)
 {
@@ -61,28 +62,21 @@ void calc_session::execute()
 			return;
 		}
 	}
+	
+	close(sockfd);
 }
 
 int calc_session::make_test(int sockfd, int test_index)
 {
 
-	double first_arg = (rand() % 1000 + 1) + (rand() % 1000) / 1000.0;
-	double second_arg = (rand() % 1000 + 1) + (rand() % 1000) / 1000.0;
-	
-	int oper = rand() % 4;
-	char oper_char;
+	calc_node_first_level calc_node;
+	calc_node.create();
 
-	if(oper == 0)
-		oper_char = '*';
-	else if(oper == 1)
-		oper_char = '/';
-	else if(oper == 2)
-		oper_char = '+';
-	else 
-		oper_char = '-';
-		
-	char buf[1024];
-	sprintf(buf, "%f %c %f", first_arg, oper_char, second_arg);
+	char buf[1000];
+	calc_node.print(buf);
+	
+	char buf_res[100];
+	calc_node.print_result(buf_res);
 	
 	std::string test_str = "calc ";
 	test_str += buf;
@@ -90,11 +84,14 @@ int calc_session::make_test(int sockfd, int test_index)
 	if(write_str(sockfd, test_str.c_str()) == -1)
 		return -1;
 	
-	std::string out_line;
-	if(read_line(sockfd, out_line) == -1)
+	std::string calc_res;
+	if(read_line(sockfd, calc_res) == -1)
 		return -1;
 	
-	log::log_console("Test: %s, result: %s", buf, out_line.c_str());
+	if(strcmp(buf_res, calc_res.c_str()) == 0)
+		log::log_result(_user.c_str(), _session_index, buf, calc_res.c_str(), buf_res, "OK");
+	else
+		log::log_result(_user.c_str(), _session_index, buf, calc_res.c_str(), buf_res, "Fail");
 
 	return 0;
 }
