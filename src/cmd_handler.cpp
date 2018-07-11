@@ -238,9 +238,9 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	
 	}
 	
-	std::ostringstream result_stream;
-	result_stream << result;
-	if(_account->commit(reserve_num, calc_expression, result_stream.str()) == -1)
+	char result_buf[1024];
+	sprintf(result_buf, config::get_result_format(), result);
+	if(_account->commit(reserve_num, calc_expression, result_buf) == -1)
 	{
 		_account->free(reserve_num);
 		delete node;
@@ -248,8 +248,7 @@ handler_state cmd_handler::calc(std::string calc_expression)
 		return exit_state;
 	}
 
-	result_stream << '\n';
-	if(print(result_stream.str().c_str()) == -1)
+	if(print(result_buf) == -1 || print("\n") == -1)
 	{
 		delete node;
 		return exit_state;

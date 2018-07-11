@@ -2,3 +2,4 @@ port=1500
 login_timeout=30
 connect=dbname=calc user=calc password=calc
 stop_key=stop
+result_format=%14.3f

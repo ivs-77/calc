@@ -32,16 +32,16 @@ void calc_node_first_level::print_result(char* buf)
 		res + third_arg.get_result() :
 		res - third_arg.get_result();
 		
-	sprintf(buf, "%7.3f", res);
+	sprintf(buf, "%14.3f", res);
 }
 
 void calc_node_second_level::create()
 {
-	first_arg = (rand() % 1000 + 1) + (rand() % 1000) / 1000.0;
+	first_arg = (rand() % 999 + 1) + (rand() % 1000) / 1000.0;
 	first_oper = (rand() % 2) == 1 ? '*' : '/';
-	second_arg = (rand() % 1000 + 1) + (rand() % 1000) / 1000.0;
+	second_arg = (rand() % 999 + 1) + (rand() % 1000) / 1000.0;
 	second_oper = (rand() % 2) == 1 ? '*' : '/';
-	third_arg  = (rand() % 1000 + 1) + (rand() % 1000) / 1000.0;
+	third_arg  = (rand() % 999 + 1) + (rand() % 1000) / 1000.0;
 }
 
 void calc_node_second_level::print(char* buf)

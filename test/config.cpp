@@ -100,7 +100,11 @@ int config::read()
 		else if(strncmp(buf, host_setting, strlen(host_setting)) == 0)
 		{
 			if(strlen(buf) > strlen(host_setting))	
-				_host = std::string(buf+strlen(host_setting), strlen(buf)-strlen(host_setting)-1);
+			{
+				_host = buf+strlen(host_setting);
+				if(_host.length() > 0 && _host[_host.length() - 1] == '\n')
+					_host.resize(_host.length() - 1);
+			}
 		}
 		else if(strncmp(buf, user_setting, strlen(user_setting)) == 0)
 		{
@@ -113,9 +117,12 @@ int config::read()
 					return -1;
 				}
 				
-				_calc_users.push_back(calc_user(
-					std::string(buf+strlen(user_setting), separator_char-buf-strlen(user_setting)).c_str(),
-					std::string(separator_char+1, strlen(separator_char+1)-1).c_str()));
+				std::string user(buf+strlen(user_setting), separator_char-buf-strlen(user_setting));
+				std::string password(separator_char + 1);
+				if(password.length() > 0 && password[password.length() - 1] == '\n')
+					password.resize(password.length() - 1);
+				
+				_calc_users.push_back(calc_user(user.c_str(), password.c_str()));
 
 			}
 		}

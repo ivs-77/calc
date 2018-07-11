@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 		log::log_error("Error reading calc config");
 		return -1;
 	}
-
+	
 	if (account::load_accounts() == -1)
 	{         
 		log::log_error("Error loading accounts");
