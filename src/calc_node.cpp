@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "calc_node.h"
 
 calc_node* calc_node::parse(const char* calc_expression)
@@ -172,7 +173,7 @@ void calc_node::accept_number(double number)
 
 calc_node* calc_node::accept_operation(char operation)
 {
-	if(_priority > calc_node::get_priority(operation))
+	if(_priority >= calc_node::get_priority(operation))
 		return new calc_node(operation, this);
 
 	_right_operand = _right_operand->accept_operation(operation);
