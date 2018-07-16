@@ -36,6 +36,7 @@ accounts account::_accounts;
 
 account::~account()
 {
+	pthread_mutex_destroy(&_account_mutex);
 }
 
 account::account(int id, const char* name, const char* pwd, int amount)
@@ -44,6 +45,8 @@ account::account(int id, const char* name, const char* pwd, int amount)
 	_name = name;
 	_pwd = pwd;
 	_amount = amount;
+	_max_reserved = 0;
+	pthread_mutex_init(&_account_mutex, NULL);
 }
 
 bool account::pwd_equals(const std::string& pwd)
@@ -97,14 +100,44 @@ account* account::get_account(const std::string& login, const std::string& pwd)
 
 int account::reserve()
 {
-	return 1;
+	pthread_mutex_lock(&_account_mutex);
+
+	if(_amount == 0 || _reserved.size() == _amount)
+	{
+		pthread_mutex_unlock(&_account_mutex);
+		return -1;
+	}	
+
+	int result;
+	if(_free.empty())
+	{
+		result = _max_reserved++;
+	}
+	else
+	{
+		result = _free.top();
+		_free.pop();
+	}
+	_reserved.insert(result);
+	pthread_mutex_unlock(&_account_mutex);
+	return result;
 }
 
 void account::free(int reserv_num)
 {
+	pthread_mutex_lock(&_account_mutex);
+	std::set<int>::iterator reserved_iter = _reserved.find(reserv_num);
+	if(reserved_iter == _reserved.end())
+	{
+		pthread_mutex_unlock(&_account_mutex);
+		return;
+	}
+	_reserved.erase(reserved_iter);
+	_free.push(reserv_num);
+	pthread_mutex_unlock(&_account_mutex);
 }
 
-int account::commit(int reserv_num, std::string& calc_expression, std::string result)
+int account::commit(int reserv_num, const char* calc_expression, const char* result)
 {
 	return 1;
 }

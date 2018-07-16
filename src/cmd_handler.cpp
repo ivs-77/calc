@@ -240,7 +240,7 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	
 	char result_buf[1024];
 	sprintf(result_buf, config::get_result_format(), result);
-	if(_account->commit(reserve_num, calc_expression, result_buf) == -1)
+	if(_account->commit(reserve_num, calc_expression.c_str(), result_buf) == -1)
 	{
 		_account->free(reserve_num);
 		delete node;
