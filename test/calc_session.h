@@ -10,6 +10,7 @@ private:
 	static void* session_proc(void* data);
 	std::string _user;
 	std::string _password;
+	std::string _calc_user_hello;
 	int _session_index;
 	
 	int login(int sockfd);
@@ -21,6 +22,6 @@ private:
 	
 public:
 	
-	static int start(int session_index, const char* user, const char* password, pthread_t* session_thread);
+	static int start(int session_index, const char* user, const char* password);
 	
 };

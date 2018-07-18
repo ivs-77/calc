@@ -1,6 +1,5 @@
 host=127.0.0.1
 port=1500
 user=john/johnpwd
-user=jack/jackpwd
-sessions_per_user=10
+sessions_per_user=1
 tests_per_session=100

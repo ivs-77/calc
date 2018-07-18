@@ -17,6 +17,8 @@ calc_session::calc_session(int session_index, const char* user, const char* pass
 	_session_index = session_index;
 	_user = user;
 	_password = password;
+	_calc_user_hello = user;
+	_calc_user_hello += "@calc>";
 }
 
 calc_session::~calc_session()
@@ -78,6 +80,20 @@ int calc_session::make_test(int sockfd, int test_index)
 	char buf_res[100];
 	calc_node.print_result(buf_res);
 	
+	char rbuf[1000];
+	int rcnt = read(sockfd, rbuf, 1000);
+	if(rcnt > 0)
+	{
+		rbuf[rcnt] = 0;
+		log::log_console("Read: %s, %d\n", rbuf, rcnt);
+	}
+	else
+	{
+		log::log_console("Read nothing\n");
+	}
+//	if(read_str(sockfd, _calc_user_hello.c_str()) == -1)
+//		return -1;
+	
 	std::string test_str = "calc ";
 	test_str += buf;
 	test_str += "\n";
@@ -89,9 +105,15 @@ int calc_session::make_test(int sockfd, int test_index)
 		return -1;
 	
 	if(strcmp(buf_res, calc_res.c_str()) == 0)
-		log::log_result(_user.c_str(), _session_index, buf, calc_res.c_str(), buf_res, "OK");
+	{
+		log::log_result(_user.c_str(), _session_index, buf, calc_res.c_str(), "OK");
+	}
 	else
-		log::log_result(_user.c_str(), _session_index, buf, calc_res.c_str(), buf_res, "Fail");
+	{
+		char status_buf[100];
+		sprintf(status_buf, "Fail. Exact answer: %s", buf_res);
+		log::log_result(_user.c_str(), _session_index, buf, calc_res.c_str(), status_buf);
+	}
 
 	return 0;
 }
@@ -117,12 +139,6 @@ int calc_session::login(int sockfd)
 	login_str += "\n";
 	
 	if(write_str(sockfd, login_str.c_str()) == -1)
-		return -1;
-	
-	std::string calc_str = _user;
-	calc_str += "@calc>";
-
-	if(read_str(sockfd, calc_str.c_str()) == -1)
 		return -1;
 	
 	return 0;
@@ -197,16 +213,19 @@ int calc_session::read_line(int sockfd, std::string& line_str)
 
 void* calc_session::session_proc(void* data)
 {
+	log::session_started();
 	calc_session* session_inst = (calc_session*)data;
 	session_inst->execute();
 	delete session_inst;
+	log::session_complete();
 	return NULL;
 }
 
-int calc_session::start(int session_index, const char* user, const char* password, pthread_t* session_thread)
+int calc_session::start(int session_index, const char* user, const char* password)
 {
 	calc_session* session_inst = new calc_session(session_index, user, password);
-	int rc = pthread_create(session_thread, NULL, calc_session::session_proc, (void*)session_inst);
+	pthread_t thread;
+	int rc = pthread_create(&thread, NULL, calc_session::session_proc, (void*)session_inst);
 	if(rc != 0)
 	{
 		delete session_inst;
