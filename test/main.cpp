@@ -23,13 +23,14 @@ int main(int argc, char *argv[])
 		}
 	}
 	
+	log::log_percent();
+	sleep(1);
 	while(!log::all_sessions_complete())
 	{
 		log::log_percent();
 		sleep(1);
 	}
 	log::log_percent();
-	fflush(stdout);
 	
 	return 0;
 

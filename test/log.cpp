@@ -59,7 +59,7 @@ void log::log_result(const char* user, int session_index, const char* expression
 		return;
 	}
 
-	fprintf(res_file, "%s[%d]\tExpr: %s\tAnswer: %s\tStatus: %s\n", 
+	fprintf(res_file, "%s[%d]\n\tExpr:\t%s\n\tAnswer:\t%s\n\tStatus:\t%s\n", 
 		user, session_index, expression, calc_answer, status);
 
 	fclose(res_file);
@@ -81,6 +81,7 @@ void log::log_console(const char* message, ...)
 	va_end(arg);
 	
 	printf("\n");
+	fflush(stdout);
 	
     pthread_mutex_unlock(&console_mutex);
 }

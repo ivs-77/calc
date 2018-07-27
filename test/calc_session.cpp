@@ -80,24 +80,12 @@ int calc_session::make_test(int sockfd, int test_index)
 	char buf_res[100];
 	calc_node.print_result(buf_res);
 	
-	char rbuf[1000];
-	int rcnt = read(sockfd, rbuf, 1000);
-	if(rcnt > 0)
-	{
-		rbuf[rcnt] = 0;
-		log::log_console("Read: %s, %d\n", rbuf, rcnt);
-	}
-	else
-	{
-		log::log_console("Read nothing\n");
-	}
-//	if(read_str(sockfd, _calc_user_hello.c_str()) == -1)
-//		return -1;
+	if(read_str(sockfd, _calc_user_hello.c_str()) == -1)
+		return -1;
 	
-	std::string test_str = "calc ";
-	test_str += buf;
-	test_str += "\n";
-	if(write_str(sockfd, test_str.c_str()) == -1)
+	char test_buf[1000];
+	sprintf(test_buf, "calc %s\n", buf);
+	if(write_str(sockfd, test_buf) == -1)
 		return -1;
 	
 	std::string calc_res;
@@ -159,6 +147,12 @@ int calc_session::read_str(int sockfd, const char* str)
 {
 	char buf[strlen(str)];
 	size_t read_total = 0;
+	if(_line_rem.size() > 0)
+	{
+		strncpy(buf, _line_rem.c_str(), _line_rem.size());
+		read_total = _line_rem.size();
+		_line_rem.clear();
+	}
 	while(read_total < strlen(str))
 	{
 		int read_count = read(sockfd, buf + read_total, strlen(str)-read_total);
@@ -187,7 +181,7 @@ int calc_session::read_line(int sockfd, std::string& line_str)
 	char* line_char	= NULL;
 	while(line_char == NULL)
 	{
-		int current_pos = 0;
+		size_t current_pos = 0;
 		while(line_char == NULL && current_pos < 1024)
 		{
 			int retval = read(sockfd, read_buffer + current_pos, 1024 - current_pos);
@@ -206,6 +200,8 @@ int calc_session::read_line(int sockfd, std::string& line_str)
 			}
 		}
 		line_str += read_buffer;
+		if(line_str.size() < (current_pos - 1))
+			_line_rem = std::string(line_char + 1, current_pos - line_str.size());
 	}
 	
 	return 0;

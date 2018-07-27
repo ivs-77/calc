@@ -11,6 +11,7 @@ private:
 	std::string _user;
 	std::string _password;
 	std::string _calc_user_hello;
+	std::string _line_rem;
 	int _session_index;
 	
 	int login(int sockfd);
