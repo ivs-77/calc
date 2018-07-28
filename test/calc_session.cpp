@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <sys/types.h>    
 #include <sys/socket.h>    
+#include <sys/time.h>
 #include <netinet/in.h>    
 #include <arpa/inet.h> 
 #include <pthread.h>
@@ -19,6 +20,7 @@ calc_session::calc_session(int session_index, const char* user, const char* pass
 	_password = password;
 	_calc_user_hello = user;
 	_calc_user_hello += "@calc>";
+	_total_session_calc_time = 0;
 }
 
 calc_session::~calc_session()
@@ -58,7 +60,7 @@ void calc_session::execute()
 	
 	for(int test_index = 0; test_index < config::get_tests_per_session(); test_index++)
 	{
-		if(make_test(sockfd, test_index) == -1)
+		if(make_test(sockfd) == -1)
 		{
 			close(sockfd);
 			return;
@@ -68,7 +70,7 @@ void calc_session::execute()
 	close(sockfd);
 }
 
-int calc_session::make_test(int sockfd, int test_index)
+int calc_session::make_test(int sockfd)
 {
 
 	calc_node_first_level calc_node;
@@ -88,9 +90,16 @@ int calc_session::make_test(int sockfd, int test_index)
 	if(write_str(sockfd, test_buf) == -1)
 		return -1;
 	
+	timeval calc_start_time;
+	gettimeofday(&calc_start_time, NULL);
 	std::string calc_res;
 	if(read_line(sockfd, calc_res) == -1)
 		return -1;
+	timeval calc_end_time;
+	gettimeofday(&calc_end_time, NULL);
+	_total_session_calc_time += 
+		(1.0 * calc_end_time.tv_sec + calc_end_time.tv_usec / 1e6) - 
+		(1.0 * calc_start_time.tv_sec + calc_start_time.tv_usec / 1e6);
 	
 	if(strcmp(buf_res, calc_res.c_str()) == 0)
 	{
@@ -212,8 +221,8 @@ void* calc_session::session_proc(void* data)
 	log::session_started();
 	calc_session* session_inst = (calc_session*)data;
 	session_inst->execute();
+	log::session_complete(session_inst->_total_session_calc_time);
 	delete session_inst;
-	log::session_complete();
 	return NULL;
 }
 

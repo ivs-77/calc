@@ -2,6 +2,7 @@
 #include <string.h>    
 #include <stdio.h>    
 #include <stdarg.h>    
+#include <sys/time.h>
 #include <time.h>    
 #include "log.h"
 #include "config.h"
@@ -15,7 +16,7 @@ char log::result_file_name[20];
 int log::total_test_count = -1;
 int log::current_test_count = 0;
 int log::total_sessions_running = 0;
-
+double log::total_sessions_calc_time = 0;
 
 log::log()
 {
@@ -125,9 +126,47 @@ void log::session_started()
     pthread_mutex_unlock(&sessions_mutex);
 }
 
-void log::session_complete()
+void log::session_complete(double total_calc_time)
 {
 	pthread_mutex_lock(&sessions_mutex);
     total_sessions_running--;
+    total_sessions_calc_time += total_calc_time;
     pthread_mutex_unlock(&sessions_mutex);
+}
+
+void log::log_totals(const timeval& start_time)
+{
+	
+	timeval end_time;
+	gettimeofday(&end_time, NULL);
+	
+	double time_diff = 
+		(1.0 * end_time.tv_sec + end_time.tv_usec / 1e6) - 
+		(1.0 * start_time.tv_sec + start_time.tv_usec / 1e6);
+
+	pthread_mutex_lock(&result_mutex);
+	
+	FILE* res_file = fopen(result_file_name, "a");
+	if(res_file == NULL)
+	{
+		pthread_mutex_unlock(&result_mutex);
+		log_console("Result file can't be opened");
+		return;
+	}
+
+    fprintf(res_file, "-----------------------------------\n");
+    fprintf(res_file, "Total execution time  : %10.3f sec\n", time_diff);
+    fprintf(res_file, "Total calc time       : %10.3f sec\n", total_sessions_calc_time);
+    fprintf(res_file, "Total tests count     : %10d\n", get_total_test_count());
+    fprintf(res_file, "Avg calc time per test: %10.3f sec\n", total_sessions_calc_time / get_total_test_count());
+
+	fclose(res_file);
+	pthread_mutex_unlock(&result_mutex);
+
+	pthread_mutex_lock(&console_mutex);
+    printf("\rTotal execution time  : %10.3f sec\n", time_diff);
+    printf("Total calc time       : %10.3f sec\n", total_sessions_calc_time);
+    printf("Total tests count     : %10d\n", get_total_test_count());
+    printf("Avg calc time per test: %10.3f sec\n", total_sessions_calc_time / get_total_test_count());
+    pthread_mutex_unlock(&console_mutex);
 }
