@@ -1,6 +1,7 @@
 #include <map>
 #include <set>
 #include <stack>
+#include <libpq-fe.h>
 
 class account;
 
@@ -43,6 +44,7 @@ private:
 	std::stack<int> _free;
 	int _max_reserved;
 	pthread_mutex_t _account_mutex;
+	PGconn* _conn;
 	
 	static accounts _accounts;
 };

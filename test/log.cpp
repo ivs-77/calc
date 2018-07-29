@@ -158,6 +158,7 @@ void log::log_totals(const timeval& start_time)
     fprintf(res_file, "Total execution time  : %10.3f sec\n", time_diff);
     fprintf(res_file, "Total calc time       : %10.3f sec\n", total_sessions_calc_time);
     fprintf(res_file, "Total tests count     : %10d\n", get_total_test_count());
+    fprintf(res_file, "Total sessions count  : %10d\n", config::get_users_count() * config::get_sessions_per_user());
     fprintf(res_file, "Avg calc time per test: %10.3f sec\n", total_sessions_calc_time / get_total_test_count());
 
 	fclose(res_file);
@@ -167,6 +168,7 @@ void log::log_totals(const timeval& start_time)
     printf("\rTotal execution time  : %10.3f sec\n", time_diff);
     printf("Total calc time       : %10.3f sec\n", total_sessions_calc_time);
     printf("Total tests count     : %10d\n", get_total_test_count());
+    printf("Total sessions count  : %10d\n", config::get_users_count() * config::get_sessions_per_user());
     printf("Avg calc time per test: %10.3f sec\n", total_sessions_calc_time / get_total_test_count());
     pthread_mutex_unlock(&console_mutex);
 }

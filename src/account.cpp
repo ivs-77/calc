@@ -1,4 +1,3 @@
-#include <libpq-fe.h>
 #include <stdlib.h>
 #include "log.h"
 #include "config.h"
@@ -36,6 +35,11 @@ accounts account::_accounts;
 
 account::~account()
 {
+	if(_conn != NULL)
+	{
+		PQfinish(_conn);
+		_conn = NULL;
+	}
 	pthread_mutex_destroy(&_account_mutex);
 }
 
@@ -46,6 +50,7 @@ account::account(int id, const char* name, const char* pwd, int amount)
 	_pwd = pwd;
 	_amount = amount;
 	_max_reserved = 0;
+	_conn = NULL;
 	pthread_mutex_init(&_account_mutex, NULL);
 }
 
@@ -150,21 +155,23 @@ int account::commit(int reserv_num, const char* calc_expression, const char* res
 		return -1;
 	}
 	
-	PGconn *conn = PQconnectdb(config::get_connect());
-	if (PQstatus(conn) != CONNECTION_OK)    
+	if(_conn == NULL)
+		_conn = PQconnectdb(config::get_connect());
+
+	if (PQstatus(_conn) != CONNECTION_OK)
 	{        
-		log::log_error("Connection to database failed: %s", PQerrorMessage(conn));
-	    PQfinish(conn);
+		log::log_error("Connection to database failed: %s", PQerrorMessage(_conn));
+	    PQfinish(_conn);
+	    _conn = NULL;
 		pthread_mutex_unlock(&_account_mutex);
 	    return -1;
 	}
 	
-	PGresult *res = PQexec(conn, "BEGIN");
+	PGresult *res = PQexec(_conn, "BEGIN");
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{        
 		log::log_error("Start transaction error. Error: %s", PQresultErrorMessage(res));
 	    PQclear(res);
-		PQfinish(conn);
 		pthread_mutex_unlock(&_account_mutex);
 	    return -1;
 	}
@@ -177,44 +184,40 @@ int account::commit(int reserv_num, const char* calc_expression, const char* res
 	param_values[1] = calc_expression;
 	param_values[2] = result;
 	
-	res = PQexecParams(conn, 
+	res = PQexecParams(_conn, 
 		"insert into account_log(account_id, expr, res) values (cast($1 as integer), $2, $3)",
 		3, NULL, param_values, NULL, NULL, 0);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{        
 		log::log_error("Insert into account_log error. Error: %s", PQresultErrorMessage(res));
-		PQexec(conn, "ROLLBACK");
+		PQexec(_conn, "ROLLBACK");
 	    PQclear(res);
-		PQfinish(conn);
 		pthread_mutex_unlock(&_account_mutex);
 	    return -1;
 	}
 	
-	res = PQexecParams(conn, 
+	res = PQexecParams(_conn, 
 		"update accounts set amount = amount - 1 where id = cast($1 as integer)",
 		1, NULL, param_values, NULL, NULL, 0);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{        
 		log::log_error("Update account error. Error: %s", PQresultErrorMessage(res));
-		PQexec(conn, "ROLLBACK");
+		PQexec(_conn, "ROLLBACK");
 	    PQclear(res);
-		PQfinish(conn);
 		pthread_mutex_unlock(&_account_mutex);
 	    return -1;
 	}
 
-	res = PQexec(conn, "COMMIT");
+	res = PQexec(_conn, "COMMIT");
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{        
 		log::log_error("Commit error. Error: %s", PQresultErrorMessage(res));
 	    PQclear(res);
-		PQfinish(conn);
 		pthread_mutex_unlock(&_account_mutex);
 	    return -1;
 	}
 
 	PQclear(res);
-	PQfinish(conn);
 	
 	_amount--;
 	_reserved.erase(reserved_iter);
