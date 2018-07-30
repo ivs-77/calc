@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <ctime>
 #include <sys/time.h>
 #include "config.h"
 #include "calc_session.h"
@@ -13,6 +14,7 @@ int main(int argc, char *argv[])
 	if(config::read() == -1)
 		return -1;	
 		
+	srand(time(NULL));
 	timeval start_time;	
 	gettimeofday(&start_time, NULL);
 		

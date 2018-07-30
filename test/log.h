@@ -25,4 +25,5 @@ private:
 	static int current_test_count;
 	static int total_sessions_running;
 	static double total_sessions_calc_time;
+	static int failed_tests_count;
 };

@@ -17,6 +17,7 @@ int log::total_test_count = -1;
 int log::current_test_count = 0;
 int log::total_sessions_running = 0;
 double log::total_sessions_calc_time = 0;
+int log::failed_tests_count = 0;
 
 log::log()
 {
@@ -67,6 +68,8 @@ void log::log_result(const char* user, int session_index, const char* expression
 	
 	pthread_mutex_lock(&percent_mutex);
 	current_test_count++;
+	if(strcmp(status, "OK") != 0)
+		++failed_tests_count;
 	pthread_mutex_unlock(&percent_mutex);
 	
 	pthread_mutex_unlock(&result_mutex);
@@ -158,6 +161,7 @@ void log::log_totals(const timeval& start_time)
     fprintf(res_file, "Total execution time  : %10.3f sec\n", time_diff);
     fprintf(res_file, "Total calc time       : %10.3f sec\n", total_sessions_calc_time);
     fprintf(res_file, "Total tests count     : %10d\n", get_total_test_count());
+    fprintf(res_file, "Failed tests count    : %10d\n", failed_tests_count);
     fprintf(res_file, "Total sessions count  : %10d\n", config::get_users_count() * config::get_sessions_per_user());
     fprintf(res_file, "Avg calc time per test: %10.3f sec\n", total_sessions_calc_time / get_total_test_count());
 
@@ -168,6 +172,7 @@ void log::log_totals(const timeval& start_time)
     printf("\rTotal execution time  : %10.3f sec\n", time_diff);
     printf("Total calc time       : %10.3f sec\n", total_sessions_calc_time);
     printf("Total tests count     : %10d\n", get_total_test_count());
+    printf("Failed tests count    : %10d\n", failed_tests_count);
     printf("Total sessions count  : %10d\n", config::get_users_count() * config::get_sessions_per_user());
     printf("Avg calc time per test: %10.3f sec\n", total_sessions_calc_time / get_total_test_count());
     pthread_mutex_unlock(&console_mutex);

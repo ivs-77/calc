@@ -155,8 +155,12 @@ int account::commit(int reserv_num, const char* calc_expression, const char* res
 		return -1;
 	}
 	
+	bool needPrepare = false;
 	if(_conn == NULL)
+	{
 		_conn = PQconnectdb(config::get_connect());
+		needPrepare = true;
+	}
 
 	if (PQstatus(_conn) != CONNECTION_OK)
 	{        
@@ -167,7 +171,34 @@ int account::commit(int reserv_num, const char* calc_expression, const char* res
 	    return -1;
 	}
 	
-	PGresult *res = PQexec(_conn, "BEGIN");
+	PGresult *res;
+	if(needPrepare)
+	{
+		res = PQprepare(_conn, "insert_log", 
+			"insert into account_log(account_id, expr, res) values (cast($1 as integer), $2, $3)", 0, NULL);		
+		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+		{        
+			log::log_error("Insert command prepare error. Error: %s", PQresultErrorMessage(res));
+	    	PQclear(res);
+	    	PQfinish(_conn);
+	    	_conn = NULL;
+			pthread_mutex_unlock(&_account_mutex);
+	    	return -1;
+		}
+		res = PQprepare(_conn, "update_account", 
+			"update accounts set amount = amount - 1 where id = cast($1 as integer)", 0, NULL);		
+		if (PQresultStatus(res) != PGRES_COMMAND_OK)
+		{        
+			log::log_error("Update command prepare error. Error: %s", PQresultErrorMessage(res));
+	    	PQclear(res);
+	    	PQfinish(_conn);
+	    	_conn = NULL;
+			pthread_mutex_unlock(&_account_mutex);
+	    	return -1;
+		}
+	}	
+	
+	res = PQexec(_conn, "BEGIN");
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{        
 		log::log_error("Start transaction error. Error: %s", PQresultErrorMessage(res));
@@ -184,9 +215,7 @@ int account::commit(int reserv_num, const char* calc_expression, const char* res
 	param_values[1] = calc_expression;
 	param_values[2] = result;
 	
-	res = PQexecParams(_conn, 
-		"insert into account_log(account_id, expr, res) values (cast($1 as integer), $2, $3)",
-		3, NULL, param_values, NULL, NULL, 0);
+	res = PQexecPrepared(_conn, "insert_log", 3, param_values, NULL, NULL, 0);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{        
 		log::log_error("Insert into account_log error. Error: %s", PQresultErrorMessage(res));
@@ -196,9 +225,7 @@ int account::commit(int reserv_num, const char* calc_expression, const char* res
 	    return -1;
 	}
 	
-	res = PQexecParams(_conn, 
-		"update accounts set amount = amount - 1 where id = cast($1 as integer)",
-		1, NULL, param_values, NULL, NULL, 0);
+	res = PQexecPrepared(_conn, "update_account", 1, param_values, NULL, NULL, 0);
 	if (PQresultStatus(res) != PGRES_COMMAND_OK)
 	{        
 		log::log_error("Update account error. Error: %s", PQresultErrorMessage(res));
