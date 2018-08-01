@@ -16,3 +16,7 @@
 1. В выбранной папке выполнить команду:<br/> 
 `git clone https://github.com/ivs-77/calc`
 1. После успешного выполнения команды будет создана папка calc с подпапками src, sql и test.
+# Настройка БД
+1. Настройка брандмауэра:<br/>
+`firewall-cmd --add-service=postgresql --permanent`<br/>
+`firewall-cmd --reload`<br/>
