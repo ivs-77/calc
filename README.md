@@ -2,8 +2,7 @@
 1. Клиент github: `yum install git`
 1. CMake для сборки: `yum install cmake`
 1. Компиляторы C и C++:
-`yum install gcc
-
+`yum install gcc__
 yum install gcc-c++`
 1. Библиотеки PostgreSQL: 
 `yum install postgresql-devel`
