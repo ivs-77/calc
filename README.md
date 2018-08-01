@@ -1,5 +1,5 @@
 # ПО для развертывания проекта
-1. клиент github: `yum install git`
+1. Клиент github: `yum install git`
 1. CMake для сборки: `yum install cmake`
 1. Компиляторы C и C++:
 `yum install gcc
