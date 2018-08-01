@@ -3,6 +3,7 @@
 1. CMake для сборки: `yum install cmake`
 1. Компиляторы C и C++:
 `yum install gcc
+
 yum install gcc-c++`
 1. Библиотеки PostgreSQL: 
 `yum install postgresql-devel`
