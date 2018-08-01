@@ -2,8 +2,8 @@
 1. Клиент github: `yum install git`
 1. CMake для сборки: `yum install cmake`
 1. Компиляторы C и C++:
-`yum install gcc__
-yum install gcc-c++`
+`yum install gcc`
+`yum install gcc-c++`
 1. Библиотеки PostgreSQL: 
 `yum install postgresql-devel`
 1. Опционально netcat в качестве простого клиента для работы с сервисом calc: 
