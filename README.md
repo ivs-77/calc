@@ -42,3 +42,7 @@ bin - результат сборки проекта, содержит два ф
 1. Настроить брандмауэр, чтобы он пропускал трафик PostgreSQL:<br/>
 `firewall-cmd --add-service=postgresql --permanent`<br/>
 `firewall-cmd --reload`<br/>
+1. Войти в систему от имени учетной записи postgres<br/>
+`sudo -i -u postgres`
+1. В файле /var/lib/pgsql/data/postgresql.conf задать параметр listen_addresses - какие адреса прослушивать. Например, таким образом - прослушивать все адреса:<br/>
+`listen_addresses='*'`
