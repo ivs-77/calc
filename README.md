@@ -37,8 +37,8 @@ bin - результат сборки проекта, содержит два ф
 # Настройка БД
 1. Установить PostgreSQL<br/>
 `yum install postgresql-server postgresql-contrib`
-1. Выполнить первоначальную настройку кластера PostgreSQL
+1. Выполнить первоначальную настройку кластера PostgreSQL<br/>
 `postgresql-setup initdb`
-1. Настройка брандмауэра:<br/>
+1. Настроить брандмауэр, чтобы он пропускал трафик PostgreSQL:<br/>
 `firewall-cmd --add-service=postgresql --permanent`<br/>
 `firewall-cmd --reload`<br/>
