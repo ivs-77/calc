@@ -58,11 +58,14 @@ bin - результат сборки проекта, содержит два ф
 `createdb calc`
 1. Вернуться в сессию, в которой начали устанавливать PostgreSQL. Войти в БД calc:<br/>
 `psql -U calc -h 127.0.0.1`
-1. Выполнить скрипт (он также доступен в папке проекта 'calc/sql/create_tables.sql'):<br/>
+1. Выполнить скрипт (он также доступен в папке проекта `calc/sql/create_tables.sql`):<br/>
 `create table accounts(id integer not null, name varchar(255) not null, pwd varchar(255) not null, amount integer not null);`<br/>
 `alter table accounts add primary key (id);`<br/>
 `alter table accounts add constraint accounts_name_uk unique (name);`<br/>
 `create table account_log(id serial, account_id integer not null, dt timestamp not null default current_timestamp, expr text not null, res varchar(1024) not null);`<br/>
 `alter table account_log add primary key (id);`<br/>
 `alter table account_log add constraint accounts_fk foreign key (account_id) references accounts (id);`<br/>
-
+1. Для примера можно добавить учетные записи в БД (`calc/sql/insert_sample_data.sql`):<br/>
+`insert into accounts (id, name, pwd, amount) values (1, 'john', 'johnpwd', 999);`<br/>
+`insert into accounts (id, name, pwd, amount) values (2, 'jack', 'jackpwd', 999);`
+1. Указать параметры подключения к созданной БД в файле config.txt собранного сервиса calc (см. раздел 'Конфигурация проекта').
