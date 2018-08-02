@@ -101,11 +101,20 @@ test_bin - результат сборки проекта, содержит дв
 `    Expr  : 647.786*329.298*510.123-712.074/121.482/257.658-233.457*714.670*469.969`<br/>
 `    Answer: 30404857.650`<br/>
 `    Status: OK`<br/>
-Если тест пройден неудачно, то Status будет содержать правильный ответ, например:
+Если тест пройден неудачно, то Status будет содержать правильный ответ, например:<br/>
 `jack[7]`<br/>
 `    Expr  : 361.735*905.667*990.261-575.062/372.749*181.490- 38.891*609.864*234.277`<br/>
 `    Answer: Your account has insufficient funds`<br/>
 `    Status: Fail. Exact answer:  318863930.696`<br/>
+В конце файла приведена сводка по тесту:<br/>
+`-----------------------------------`<br/>
+`Total execution time  :      7.009 sec`<br/>
+`Total calc time       :    125.181 sec`<br/>
+`Total tests count     :       2000`<br/>
+`Failed tests count    :          3`<br/>
+`Total sessions count  :         20`<br/>
+`Avg calc time per test:      0.063 sec`
+
 
 
 
