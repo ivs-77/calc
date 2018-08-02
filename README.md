@@ -56,3 +56,14 @@ bin - результат сборки проекта, содержит два ф
 `createuser -l -P calc`
 1. Создать базу данных для пользователя calc. Для простоты, пусть имя БД совпадает с именем созданного пользователя - тогда она автоматически становится его БД по умолчанию:<br/>
 `createdb calc`
+1. Вернуться в сессию, в которой начали устанавливать PostgreSQL. Войти в БД calc:<br/>
+`psql -U calc -h 127.0.0.1`
+1. Выполнить скрипт (он также доступен в папке проекта 'calc/sql/create_tables.sql'):<br/>
+`sql
+create table accounts(id integer not null, name varchar(255) not null, pwd varchar(255) not null, amount integer not null);
+alter table accounts add primary key (id);
+alter table accounts add constraint accounts_name_uk unique (name);
+create table account_log(id serial, account_id integer not null, dt timestamp not null default current_timestamp, expr text not null, res varchar(1024) not null);
+alter table account_log add primary key (id);
+alter table account_log add constraint accounts_fk foreign key (account_id) references accounts (id);`
+
