@@ -4,8 +4,7 @@
 `yum install git`
 1. CMake для сборки:<br/>
 `yum install cmake`
-1. Компиляторы C и C++:<br/>
-`yum install gcc`<br/>
+1. Компилятор C++:<br/>
 `yum install gcc-c++`
 1. Библиотеки PostgreSQL:<br/> 
 `yum install postgresql-devel`
