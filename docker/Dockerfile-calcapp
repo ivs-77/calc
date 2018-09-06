@@ -1,0 +1,8 @@
+FROM centos:7
+RUN yum install -y postgresql-libs
+WORKDIR /calc
+ADD ./calc /calc
+ADD ./config.txt /calc
+ADD ./start_calc.sh /calc
+EXPOSE 1500
+CMD /calc/start_calc.sh

@@ -1,0 +1,18 @@
+version: "3"
+services:
+  calcdb:
+    image: calcdb
+    ports:
+      - "5432:5432"
+    networks:
+      - calcnet
+  calcapp:
+    image: calc
+    ports:
+      - "1500:1500"
+    depends_on:
+      - "calcdb"
+    networks:
+      - calcnet
+networks:
+  calcnet:

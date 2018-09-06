@@ -1,0 +1,5 @@
+port=1500
+login_timeout=30
+connect=host=calcdb dbname=postgres user=postgres
+stop_key=stop
+result_format=%14.3f
