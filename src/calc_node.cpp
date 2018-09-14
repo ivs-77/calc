@@ -50,7 +50,7 @@ enum number_read_mode
 {
 	before_dot,
 	after_dot,
-	exit
+	exit_mode
 };
 
 int calc_node::read_number(const char* calc_expression, double& result)
@@ -65,7 +65,7 @@ int calc_node::read_number(const char* calc_expression, double& result)
 	double after_dot_mult = 0.1;
 	int digit_status;
 	bool has_digits = false;
-	while(reading_mode != exit)
+	while(reading_mode != exit_mode)
 	{
 		switch(calc_expression[read_count])
 		{
@@ -125,7 +125,7 @@ int calc_node::read_number(const char* calc_expression, double& result)
 		}
 		else
 		{
-			reading_mode = exit;
+			reading_mode = exit_mode;
 		}
 	}
 	

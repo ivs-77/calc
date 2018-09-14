@@ -47,3 +47,33 @@ int listener::start()
 	// Process is exited by cmd_handler when it accepts stop_key command
 	return 0;		
 }
+
+io_service listener::service;
+
+int listener::start_v2()
+{
+	try
+	{
+		ip::tcp::acceptor acceptor(service, ip::tcp::endpoint(ip::tcp::v4(), config::get_port()));
+		log::log_info("Listener started. Accepting connections");
+		while(true)
+		{
+			socket_ptr socket(new ip::tcp::socket(service));
+			acceptor.accept(*socket);
+			cmd_handler::start_v2(std::move(socket));
+		}
+	}
+	catch(boost::system::system_error& error)
+	{
+		log::log_error("Listener error: %d %s", error.code(), error.what());
+		return -1;
+	}
+		
+	// This point is never reached.
+	// Process is exited by cmd_handler when it accepts stop_key command
+	return 0;
+}
+
+
+
+

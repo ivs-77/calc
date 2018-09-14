@@ -1,4 +1,6 @@
 #include <string>
+#include <memory>
+#include <boost/asio.hpp>
 #include "account.h"
 
 enum handler_state
@@ -7,6 +9,10 @@ enum handler_state
 	handling,
 	exit_state
 };
+
+using namespace boost::asio;
+
+typedef std::unique_ptr<ip::tcp::socket> socket_ptr;
 
 class cmd_handler
 {
@@ -32,4 +38,6 @@ private:
 public:
 	
 	static void start(int connfd);
+	
+	static void start_v2(socket_ptr&& socket);
 };

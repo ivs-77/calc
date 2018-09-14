@@ -277,3 +277,24 @@ void cmd_handler::start(int connfd)
 		log::log_error("Handler thread creation error: %d", rc);
 	}
 }
+
+void cmd_handler::start_v2(socket_ptr&& socket)
+{
+	char data[1024];
+	size_t len = socket->read_some(buffer(data));
+	data[len] = 0;
+	log::log_info("read: %s", data);
+
+/*
+	socket_ptr sock(new ip::tcp::socket(service));
+	acc.accept(*sock);
+	char data[1024];
+	size_t len = sock->read_some(buffer(data));
+	if(len > 0)
+	{
+		data[len] = 0;	
+		printf("%s", data);
+	}
+*/
+
+}

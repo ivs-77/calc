@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	if (listener::start() == -1)
+	if (listener::start_v2() == -1)
 	{         
 		log::log_error("Error starting calc listener");
 		return -1;

@@ -69,7 +69,7 @@ void log::log_error(const char* message, ...)
 			timeinfo->tm_sec);
 	
 	va_list arg;
-    va_start(arg, message);
+    	va_start(arg, message);
 	vfprintf(log_file, message, arg);
 	va_end(arg);
 	
