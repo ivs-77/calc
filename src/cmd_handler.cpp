@@ -6,14 +6,16 @@
 #include <string.h>
 #include <sstream>
 #include <stdlib.h>
+#include <thread>
 #include "log.h"
 #include "cmd_handler.h"
 #include "config.h"
 #include "calc_node.h"
 
-cmd_handler::cmd_handler(int connfd)
+cmd_handler::cmd_handler(socket_ptr&& socket)
+	: _socket(std::move(socket))
 {
-	_connfd = connfd;
+	_connfd = _socket->native_handle();
 	_account = NULL;
 }
 
@@ -258,43 +260,26 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	return handling;
 }
 
-void* cmd_handler::handler_proc(void* data)
+void cmd_handler::handler_proc(socket_ptr&& socket)
 {
-	cmd_handler* handler = (cmd_handler*)data;
-	handler->execute();
-	delete handler;
-	return NULL;
-}
-
-void cmd_handler::start(int connfd)
-{
-	cmd_handler* handler = new cmd_handler(connfd);
-	pthread_t handler_thread;
-	int rc = pthread_create(&handler_thread, NULL, cmd_handler::handler_proc, (void*)handler);
-	if(rc != 0)
+	try
 	{
-		delete handler;
-		log::log_error("Handler thread creation error: %d", rc);
+		cmd_handler(std::move(socket)).execute();
+	}
+	catch(const std::runtime_error& error)
+	{
+		log::log_error("Handler execution error: %s", error.what());
 	}
 }
 
-void cmd_handler::start_v2(socket_ptr&& socket)
+void cmd_handler::start(socket_ptr&& socket)
 {
-	char data[1024];
-	size_t len = socket->read_some(buffer(data));
-	data[len] = 0;
-	log::log_info("read: %s", data);
-
-/*
-	socket_ptr sock(new ip::tcp::socket(service));
-	acc.accept(*sock);
-	char data[1024];
-	size_t len = sock->read_some(buffer(data));
-	if(len > 0)
+	try
 	{
-		data[len] = 0;	
-		printf("%s", data);
+		std::thread(cmd_handler::handler_proc, std::move(socket)).detach();
 	}
-*/
-
+	catch(const std::runtime_error& error)
+	{
+		log::log_error("Handler thread creation error: %s", error.what());
+	}
 }

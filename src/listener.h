@@ -11,6 +11,5 @@ private:
 public:
 
 	static int start();
-	static int start_v2();
 
 };

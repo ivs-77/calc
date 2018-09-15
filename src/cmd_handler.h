@@ -18,10 +18,10 @@ class cmd_handler
 {
 private:
 	
-	cmd_handler(int connfd);
+	cmd_handler(socket_ptr&& socket);
 	~cmd_handler();
 	void execute();
-	static void* handler_proc(void* data);
+	static void handler_proc(socket_ptr&& socket);
 	int _connfd;
 	std::string current_command;
 	
@@ -34,10 +34,10 @@ private:
 	handler_state handle_command();
 	
 	account* _account;
+	
+	socket_ptr _socket;
 
 public:
 	
-	static void start(int connfd);
-	
-	static void start_v2(socket_ptr&& socket);
+	static void start(socket_ptr&& socket);
 };
