@@ -13,7 +13,7 @@
 #include "calc_node.h"
 
 cmd_handler::cmd_handler(socket_ptr&& socket)
-	: _socket(std::move(socket))
+	: _socket(std::move(socket)), _buffer_stream(&_buffer)
 {
 	_connfd = _socket->native_handle();
 	_account = NULL;
@@ -73,42 +73,24 @@ int cmd_handler::read_command()
 {
 
 	current_command.clear();
-	
-	char read_buffer[1025];
-	read_buffer[1024] = 0;
-	char* line_char	= NULL;
-	while(line_char == NULL)
+	boost::system::error_code error;
+	read_until(*_socket, _buffer, '\n', error);
+	if(error == error::eof)
 	{
-		int current_pos = 0;
-		while(line_char == NULL && current_pos < 1024)
-		{
-			int retval = read(_connfd, read_buffer + current_pos, 1024 - current_pos);
-			if(retval == -1)
-			{
-				log::log_errno("Error reading user input");
-				return -1;
-			}
-			else if(retval == 0)
-			{
-				// client closed connection
-				return -1;
-			}
-			else
-			{
-				current_pos += retval;
-				read_buffer[current_pos] = 0;
-				line_char = strchr(read_buffer + current_pos - retval, '\n');
-				if(line_char != NULL)
-					line_char[0] = 0;
-			}
-		}
-		current_command += read_buffer;
+		// client closed connection
+		return -1;
 	}
+	else if(error)
+	{
+		log::log_error("Error reading user input: %d %s", error.value(), error.message().c_str());
+		return -1;
+	}
+	std::getline(_buffer_stream, current_command);
 	
 	// for netcat -C mode: it ends line with \r\n
 	if(current_command.length() > 0 && current_command[current_command.length() - 1] == '\r')
 		current_command.resize(current_command.length() - 1);
-
+	
 	return 0;
 }
 

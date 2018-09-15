@@ -36,6 +36,8 @@ private:
 	account* _account;
 	
 	socket_ptr _socket;
+	streambuf _buffer;
+	std::istream _buffer_stream;
 
 public:
 	
