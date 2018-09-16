@@ -7,25 +7,22 @@
 #include <sstream>
 #include <stdlib.h>
 #include <thread>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/optional.hpp>
 #include "log.h"
 #include "cmd_handler.h"
 #include "config.h"
 #include "calc_node.h"
 
-cmd_handler::cmd_handler(socket_ptr&& socket)
-	: _socket(std::move(socket)), _buffer_stream(&_buffer)
-{
-	_connfd = _socket->native_handle();
-	_account = NULL;
-}
-
-cmd_handler::~cmd_handler()
+cmd_handler::cmd_handler()
+	: _socket(_service), _buffer_stream(&_buffer)
 {
 }
 
 void cmd_handler::execute()
 {
 
+	_connfd = _socket.native_handle();
 	handler_state state = initial;
 	
 	while(state != exit_state)
@@ -42,39 +39,58 @@ void cmd_handler::execute()
 				break;
 		}
 	}
-	
-	close(_connfd);
 }
 
-int cmd_handler::wait()
+void trim_last_cr(std::string& trimming_str)
 {
-	pollfd fd;
-	fd.fd = _connfd;
-	fd.events = POLLIN;
-	fd.revents = 0;
-	int retval = poll(&fd, 1, 1000 * config::get_login_timeout());
-	if (retval == -1)
-	{
-		log::log_errno("Error while waiting for user input");
-		return -1;
-	}
-	else if (retval)
-	{
-		return 0;
-	}
-	else
-	{
-		// timeout
-		return -1;
-	}
+	// for netcat -C mode: it ends line with \r\n
+	if(trimming_str.length() > 0 && trimming_str[trimming_str.length() - 1] == '\r')
+		trimming_str.resize(trimming_str.length() - 1);
+}
+
+int cmd_handler::read_command_limited_in_time()
+{
+
+	int result = -1;
+	deadline_timer timer(_service);
+	timer.expires_from_now(boost::posix_time::seconds(config::get_login_timeout()));
+	timer.async_wait([this] (const boost::system::error_code& error)
+		{ 
+			if(!error)
+				_socket.cancel();
+			else if(error != error::operation_aborted)
+				log::log_error("Read command timer error: %d %s", error.value(), error.message().c_str());
+		});
+		
+	async_read_until(_socket, _buffer, '\n', 
+		[this, &result, &timer] (const boost::system::error_code& error, size_t)
+		{
+			if(error != error::operation_aborted)
+				timer.cancel();
+			if(error == error::eof)
+			{
+				// client closed connection
+				return;
+			}
+			if(error)
+			{
+				log::log_error("Read command error: %d %s", error.value(), error.message().c_str());
+				return;
+			}
+			std::getline(_buffer_stream, current_command);
+			trim_last_cr(current_command);
+			result = 0;
+		});
+		
+	_service.reset();
+	_service.run();
+	return result;
 }
 
 int cmd_handler::read_command()
 {
-
-	current_command.clear();
 	boost::system::error_code error;
-	read_until(*_socket, _buffer, '\n', error);
+	read_until(_socket, _buffer, '\n', error);
 	if(error == error::eof)
 	{
 		// client closed connection
@@ -86,11 +102,7 @@ int cmd_handler::read_command()
 		return -1;
 	}
 	std::getline(_buffer_stream, current_command);
-	
-	// for netcat -C mode: it ends line with \r\n
-	if(current_command.length() > 0 && current_command[current_command.length() - 1] == '\r')
-		current_command.resize(current_command.length() - 1);
-	
+	trim_last_cr(current_command);
 	return 0;
 }
 
@@ -120,7 +132,7 @@ int cmd_handler::hello()
 handler_state cmd_handler::login()
 {
 	
-	if(hello() == -1 || wait() == -1 || read_command() == -1)
+	if(hello() == -1 || read_command_limited_in_time() == -1)
 		return exit_state;	
 		
 	if(current_command == config::get_stop_key())
@@ -141,7 +153,7 @@ handler_state cmd_handler::login()
 	
 	std::string login_name = current_command.substr(login_length);
 	
-	if(hello() == -1 || wait() == -1 || read_command() == -1)
+	if(hello() == -1 || read_command_limited_in_time() == -1)
 		return exit_state;	
 	
 	const char* pwd_cmd = "password ";
@@ -242,11 +254,16 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	return handling;
 }
 
-void cmd_handler::handler_proc(socket_ptr&& socket)
+ip::tcp::socket& cmd_handler::get_socket()
+{
+	return _socket;
+}
+
+void cmd_handler::handler_proc(std::unique_ptr<cmd_handler>&& handler)
 {
 	try
 	{
-		cmd_handler(std::move(socket)).execute();
+		handler->execute();
 	}
 	catch(const std::runtime_error& error)
 	{
@@ -254,11 +271,11 @@ void cmd_handler::handler_proc(socket_ptr&& socket)
 	}
 }
 
-void cmd_handler::start(socket_ptr&& socket)
+void cmd_handler::start(std::unique_ptr<cmd_handler>&& handler)
 {
 	try
 	{
-		std::thread(cmd_handler::handler_proc, std::move(socket)).detach();
+		std::thread(cmd_handler::handler_proc, std::move(handler)).detach();
 	}
 	catch(const std::runtime_error& error)
 	{

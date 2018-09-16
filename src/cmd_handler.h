@@ -12,34 +12,33 @@ enum handler_state
 
 using namespace boost::asio;
 
-typedef std::unique_ptr<ip::tcp::socket> socket_ptr;
-
 class cmd_handler
 {
 private:
 	
-	cmd_handler(socket_ptr&& socket);
-	~cmd_handler();
 	void execute();
-	static void handler_proc(socket_ptr&& socket);
-	int _connfd;
+	static void handler_proc(std::unique_ptr<cmd_handler>&& handler);
+	int _connfd = 0;
 	std::string current_command;
 	
 	int print(const char* message);
 	int hello();
-	int wait();
 	int read_command();
+	int read_command_limited_in_time();
 	handler_state calc(std::string calc_expression);
 	handler_state login();
 	handler_state handle_command();
 	
-	account* _account;
+	account* _account = NULL;
 	
-	socket_ptr _socket;
+	io_service _service;
+	ip::tcp::socket _socket;
 	streambuf _buffer;
 	std::istream _buffer_stream;
 
 public:
 	
-	static void start(socket_ptr&& socket);
+	cmd_handler();
+	ip::tcp::socket& get_socket();
+	static void start(std::unique_ptr<cmd_handler>&& handler);
 };
