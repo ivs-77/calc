@@ -18,7 +18,6 @@ private:
 	
 	void execute();
 	static void handler_proc(std::unique_ptr<cmd_handler>&& handler);
-	int _connfd = 0;
 	std::string current_command;
 	
 	int print(const char* message);

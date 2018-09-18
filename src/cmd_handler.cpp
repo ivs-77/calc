@@ -22,7 +22,6 @@ cmd_handler::cmd_handler()
 void cmd_handler::execute()
 {
 
-	_connfd = _socket.native_handle();
 	handler_state state = initial;
 	
 	while(state != exit_state)
@@ -67,14 +66,10 @@ int cmd_handler::read_command_limited_in_time()
 		{
 			if(error != error::operation_aborted)
 				timer.cancel();
-			if(error == error::eof)
-			{
-				// client closed connection
-				return;
-			}
 			if(error)
 			{
-				log::log_error("Read command error: %d %s", error.value(), error.message().c_str());
+				if(error != error::operation_aborted && error != error::eof)
+					log::log_error("Read command error: %d %s", error.value(), error.message().c_str());
 				return;
 			}
 			std::getline(_buffer_stream, current_command);
@@ -108,9 +103,16 @@ int cmd_handler::read_command()
 
 int cmd_handler::print(const char* message)
 {
-	if(write(_connfd, message, strlen(message)) == -1)
+	boost::system::error_code error;
+	write(_socket, buffer(message, strlen(message)), error);
+	if(error == error::eof)
 	{
-		log::log_errno("Error writing to socket");
+		// client closed connection
+		return -1;
+	}
+	else if(error)
+	{
+		log::log_error("Error reading user input: %d %s", error.value(), error.message().c_str());
 		return -1;
 	}
 	return 0;
@@ -141,32 +143,29 @@ handler_state cmd_handler::login()
 		exit(0);
 	}
 
-	const char* login_cmd = "login ";
-	const size_t login_length = strlen(login_cmd);
-	if(current_command.compare(0, login_length, login_cmd) != 0 || 
-	   current_command.length() <= login_length)
+	const std::string login_cmd("login ");
+	if(current_command.length() <= login_cmd.length() || 
+	   current_command.compare(0, login_cmd.size(), login_cmd) != 0)
 	{
 		if(print("Invalid command\n") == -1)
 			return exit_state;
 		return initial;
 	}
 	
-	std::string login_name = current_command.substr(login_length);
+	std::string login_name = current_command.substr(login_cmd.length());
 	
 	if(hello() == -1 || read_command_limited_in_time() == -1)
 		return exit_state;	
 	
-	const char* pwd_cmd = "password ";
-	const size_t pwd_length = strlen(pwd_cmd);
-	if(current_command.compare(0, pwd_length, pwd_cmd) != 0 || 
-	   current_command.length() <= pwd_length)
+	const std::string pwd_cmd("password ");
+	if(current_command.length() <= pwd_cmd.length() || current_command.compare(0, pwd_cmd.length(), pwd_cmd) != 0)
 	{
 		if(print("Invalid command\n") == -1)
 			return exit_state;
 		return initial;
 	}
 	
-	std::string pwd = current_command.substr(pwd_length);
+	std::string pwd = current_command.substr(pwd_cmd.length());
 
 	_account = account::get_account(login_name, pwd);
 	if(_account == NULL)
@@ -190,17 +189,15 @@ handler_state cmd_handler::handle_command()
 		return initial;
 	}
 		
-	const char* calc_cmd = "calc ";
-	const size_t calc_length = strlen(calc_cmd);
-	if(current_command.compare(0, calc_length, calc_cmd) != 0 || 
-	   current_command.length() <= calc_length)
+	const std::string calc_cmd("calc ");
+	if(current_command.length() <= calc_cmd.length() || current_command.compare(0, calc_cmd.length(), calc_cmd) != 0)
 	{
 		if(print("Invalid command\n") == -1)
 			return exit_state;
 		return handling;
 	}
 	
-	return calc(current_command.substr(calc_length));
+	return calc(current_command.substr(calc_cmd.length()));
 }
 
 handler_state cmd_handler::calc(std::string calc_expression)
@@ -214,8 +211,8 @@ handler_state cmd_handler::calc(std::string calc_expression)
 		return handling;
 	}
 
-	calc_node* node = calc_node::parse(calc_expression.c_str());
-	if(node == NULL)
+	std::unique_ptr<calc_node> node(calc_node::parse(calc_expression.c_str()));
+	if(!node)
 	{
 		_account->free(reserve_num);
 		if(print("Invalid expression\n") == -1)
@@ -227,7 +224,6 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	if(node->calc(result) == -1)
 	{
 		_account->free(reserve_num);
-		delete node;
 		if(print("Error calculating expression\n") == -1)
 			return exit_state;	
 		return handling;
@@ -239,18 +235,13 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	if(_account->commit(reserve_num, calc_expression.c_str(), result_buf) == -1)
 	{
 		_account->free(reserve_num);
-		delete node;
 		print("Error in account system\n");
 		return exit_state;
 	}
 
 	if(print(result_buf) == -1 || print("\n") == -1)
-	{
-		delete node;
 		return exit_state;
-	}
 
-	delete node;
 	return handling;
 }
 
