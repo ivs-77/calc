@@ -1,7 +1,3 @@
-#include <sys/types.h>    
-#include <pthread.h>
-#include <unistd.h>
-#include <poll.h>
 #include <stdio.h>
 #include <string.h>
 #include <sstream>
@@ -200,11 +196,53 @@ handler_state cmd_handler::handle_command()
 	return calc(current_command.substr(calc_cmd.length()));
 }
 
+class reserve_holder
+{
+public:
+	reserve_holder(account* acc)
+	{
+		_acc = acc;
+		_value = _acc->reserve();
+	}
+	
+	~reserve_holder()
+	{
+		free();
+	}
+	
+	int commit(const char* expr, const char* expr_result)
+	{
+		int result = _acc->commit(_value, expr, expr_result);
+		if(result == -1)
+			free();
+		else
+			_value = -1;
+		return result;
+	}
+	
+	bool reserved()
+	{
+		return (_value != -1);
+	}
+	
+private:
+	void free()
+	{
+		if(_value != -1)
+		{
+			_acc->free(_value);
+			_value = -1;
+		}
+	}
+	int _value = -1;
+	account* _acc = NULL;
+};
+
 handler_state cmd_handler::calc(std::string calc_expression)
 {
 	
-	int reserve_num = _account->reserve();
-	if(reserve_num == -1)
+	reserve_holder reserve(_account);
+	if(!reserve.reserved())
 	{
 		if(print("Your account has insufficient funds\n") == -1)
 			return exit_state;	
@@ -214,7 +252,6 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	std::unique_ptr<calc_node> node(calc_node::parse(calc_expression.c_str()));
 	if(!node)
 	{
-		_account->free(reserve_num);
 		if(print("Invalid expression\n") == -1)
 			return exit_state;	
 		return handling;
@@ -223,7 +260,6 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	double result;	
 	if(node->calc(result) == -1)
 	{
-		_account->free(reserve_num);
 		if(print("Error calculating expression\n") == -1)
 			return exit_state;	
 		return handling;
@@ -232,9 +268,8 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	
 	char result_buf[1024];
 	sprintf(result_buf, config::get_result_format(), result);
-	if(_account->commit(reserve_num, calc_expression.c_str(), result_buf) == -1)
+	if(reserve.commit(calc_expression.c_str(), result_buf) == -1)
 	{
-		_account->free(reserve_num);
 		print("Error in account system\n");
 		return exit_state;
 	}
@@ -243,11 +278,6 @@ handler_state cmd_handler::calc(std::string calc_expression)
 		return exit_state;
 
 	return handling;
-}
-
-ip::tcp::socket& cmd_handler::get_socket()
-{
-	return _socket;
 }
 
 void cmd_handler::handler_proc(std::unique_ptr<cmd_handler>&& handler)
@@ -262,14 +292,16 @@ void cmd_handler::handler_proc(std::unique_ptr<cmd_handler>&& handler)
 	}
 }
 
-void cmd_handler::start(std::unique_ptr<cmd_handler>&& handler)
+void cmd_handler::accept(ip::tcp::acceptor& acceptor)
 {
 	try
 	{
+		std::unique_ptr<cmd_handler> handler(new cmd_handler());
+		acceptor.accept(handler->_socket);
 		std::thread(cmd_handler::handler_proc, std::move(handler)).detach();
 	}
 	catch(const std::runtime_error& error)
 	{
-		log::log_error("Handler thread creation error: %s", error.what());
+		log::log_error("Connection accept error: %s", error.what());
 	}
 }

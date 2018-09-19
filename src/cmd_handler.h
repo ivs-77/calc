@@ -38,6 +38,5 @@ private:
 public:
 	
 	cmd_handler();
-	ip::tcp::socket& get_socket();
-	static void start(std::unique_ptr<cmd_handler>&& handler);
+	static void accept(ip::tcp::acceptor& acceptor);
 };

@@ -14,11 +14,7 @@ int listener::start()
 		ip::tcp::acceptor acceptor(service, ip::tcp::endpoint(ip::tcp::v4(), config::get_port()));
 		log::log_info("Listener started. Accepting connections");
 		while(true)
-		{
-			std::unique_ptr<cmd_handler> handler(new cmd_handler());
-			acceptor.accept(handler->get_socket());
-			cmd_handler::start(std::move(handler));
-		}
+			cmd_handler::accept(acceptor);
 	}
 	catch(const std::runtime_error& error)
 	{
