@@ -1,23 +1,26 @@
 #include <map>
+#include <memory>
+#include <mutex>
 #include <set>
 #include <stack>
 #include <libpq-fe.h>
 
 class account;
 
+typedef std::unique_ptr<account> account_ptr;
+
 class accounts
 {
 public:
 	
 	accounts();
-	~accounts();
 
 	void add(int id, const char* name, const char* pwd, int amount);
 	account* get_account(const std::string& login, const std::string& pwd);
 	
 private:
 
-	std::map< std::string, account* > _accounts;
+	std::map<std::string, account_ptr> _accounts;
 
 };
 
@@ -43,7 +46,7 @@ private:
 	std::set<int> _reserved;
 	std::stack<int> _free;
 	int _max_reserved;
-	pthread_mutex_t _account_mutex;
+	std::mutex _account_mutex;
 	PGconn* _conn;
 	
 	static accounts _accounts;

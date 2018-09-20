@@ -280,6 +280,11 @@ handler_state cmd_handler::calc(std::string calc_expression)
 	return handling;
 }
 
+void cmd_handler::inst_accept(ip::tcp::acceptor& acceptor)
+{
+	acceptor.accept(_socket);
+}
+
 void cmd_handler::handler_proc(std::unique_ptr<cmd_handler>&& handler)
 {
 	try
@@ -297,7 +302,7 @@ void cmd_handler::accept(ip::tcp::acceptor& acceptor)
 	try
 	{
 		std::unique_ptr<cmd_handler> handler(new cmd_handler());
-		acceptor.accept(handler->_socket);
+		handler->inst_accept(acceptor);
 		std::thread(cmd_handler::handler_proc, std::move(handler)).detach();
 	}
 	catch(const std::runtime_error& error)
