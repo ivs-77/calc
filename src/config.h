@@ -5,7 +5,7 @@ class config
 private:
 
 	static int _port;
-	static int _loginTimeout;
+	static int _login_timeout;
 	static std::string _connect;
 	static std::string _stop_key;
 	static std::string _result_format;
